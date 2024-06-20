@@ -1,0 +1,1 @@
+##Various python code snippets for interacting with Distech Controls ECY2 API.  This code is my personal code, it is not affiliated with Distech Controls nor supported by them in anyway.  Use at your own risk!
