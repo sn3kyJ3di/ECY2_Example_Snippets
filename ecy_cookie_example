@@ -1,0 +1,40 @@
+def get_existing_endpoints():
+    global device_cookies
+    global overridden_status
+
+    url = f"https://{device_ip_address}/api/rest/v2/services/bacnet/local/objects/analog-values"
+
+    headers = {}
+    if device_ip_address in device_cookies:
+        print("Using cookie for authentication")
+        headers["Cookie"] = device_cookies[device_ip_address]
+    else:
+        print("Using basic authentication")
+        credentials = f"{device_username}:{device_password}"
+        base64_credentials = base64.b64encode(credentials.encode()).decode()
+        headers["Authorization"] = f"Basic {base64_credentials}"
+
+    headers["Content-Type"] = "application/json"
+
+    try:
+        response = requests.get(url, headers=headers, verify=False)
+        if response.status_code == 200:
+            endpoints_dict = response.json()  # Response is a dictionary
+            endpoints = list(endpoints_dict.values())  # Convert to list of dictionaries
+            if "set-cookie" in response.headers:
+                device_cookies[device_ip_address] = response.headers["set-cookie"]
+                print("Stored cookie:", device_cookies[device_ip_address])
+            
+            # Update overridden status
+            for endpoint in endpoints:
+                overridden_status[endpoint["object-name"]] = endpoint["status"]["overridden"]
+
+            return endpoints
+        else:
+            print(f"Error fetching endpoints: {response.status_code}")
+            if device_ip_address in device_cookies:
+                del device_cookies[device_ip_address]
+            return []
+    except requests.exceptions.RequestException as e:
+        print(f"Error connecting to device: {e}")
+        return []
